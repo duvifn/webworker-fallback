@@ -1,16 +1,16 @@
-Improvements of this fork
----
-
-- Support for data URIs
-- Support for importScripts()
-- Basic error handling
-
 Overview
 ---
 
 This library provides basic compatibility for the html5 web worker api in browsers that don't support it.  Ideally, usage is as simple as including Worker.js, and everything should work out of the box.  In practice, you should read the Limitations section and test in a browser that doesn't support web workers.
 
 This was developed for [Asterank](http://www.asterank.com/3d), where it is used so people with underpowered browsers can still enjoy the physics simulations.
+
+Improvements of this fork
+---
+
+- Support for data URIs
+- Support for importScripts()
+- Basic error handling
 
 Installation
 ---
@@ -19,7 +19,7 @@ Installation
 <script src="https://cdn.rawgit.com/andywer/webworker-fallback/__VERSION__/Worker.js"></script>
 ```
 
-(where __VERSION__ is a version like '0.5.0')
+(where `__VERSION__` is a version like '0.5.0')
 
 or when using browserify/webpack:
 
@@ -58,8 +58,6 @@ while (true) {
 
 To do
 ---
-- error handlers
-- onerror, etc. events
 - terminate/close support
 
 License (MIT)
