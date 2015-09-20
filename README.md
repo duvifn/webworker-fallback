@@ -1,3 +1,5 @@
+[![NPM Version](https://img.shields.io/npm/v/webworker-fallback.svg)](https://www.npmjs.com/package/webworker-fallback)
+
 Overview
 ---
 
