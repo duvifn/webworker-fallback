@@ -1,3 +1,10 @@
+Improvements of this fork
+---
+
+- Support for data URIs
+- Support for importScripts()
+- Basic error handling
+
 Overview
 ---
 
