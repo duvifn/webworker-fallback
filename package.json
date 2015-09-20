@@ -1,0 +1,31 @@
+{
+  "name": "webworker-fallback",
+  "version": "0.5.0",
+  "description": "Web worker API fallback for browsers that don't support them.",
+  "main": "Worker.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andywer/webworker-fallback.git"
+  },
+  "keywords": [
+    "web worker",
+    "worker",
+    "fallback"
+  ],
+  "author": "Ian Webster (https://github.com/typpo)",
+  "contributors": [
+    "Andy Wermke <andy@dev.next-step-software.com> (https://github.com/andywer)",
+    "Ian Webster (https://github.com/typpo)"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/andywer/webworker-fallback/issues"
+  },
+  "homepage": "https://github.com/andywer/webworker-fallback#readme"
+}

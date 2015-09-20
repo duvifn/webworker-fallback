@@ -12,6 +12,23 @@ This library provides basic compatibility for the html5 web worker api in browse
 
 This was developed for [Asterank](http://www.asterank.com/3d), where it is used so people with underpowered browsers can still enjoy the physics simulations.
 
+Installation
+---
+
+```html
+<script src="https://cdn.rawgit.com/andywer/webworker-fallback/__VERSION__/Worker.js"></script>
+```
+
+(where __VERSION__ is a version like '0.5.0')
+
+or when using browserify/webpack:
+
+```javascript
+require('webworker-fallback');
+```
+
+Note: The fallback will only be used when no window.Worker implementation is found.
+
 Limitations
 ---
 
