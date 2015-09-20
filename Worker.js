@@ -5,11 +5,31 @@
   var WW_CONTEXT_WHITELIST = [
     'setTimeout', 'setInterval', 'XMLHttpRequest',
     'navigator', 'location', 'clearTimeout', 'clearInterval',
-    'applicationCache', 'importScripts', 'Worker' /*, 'Blob'*/
+    'applicationCache', 'importScripts', 'Worker', 'console' /*, 'Blob'*/
   ];
 
+  function importScript(worker_context, script_path) {
+    var req = window.XMLHttpRequest ?
+      new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+
+    if (req === null) {
+      throw new Error("XMLHttpRequest failed to initiate.");
+    }
+
+    req.open("GET", script_path, false);
+    req.send(null);
+
+    if (req.status !== 200) {
+      throw new Error('Cannot import script (status code ' + req.status + '): ' + script_path);
+    }
+
+    scopedEval.call(worker_context, req.responseText);
+  }
+
   function scopedEval(scr) {
+    var context = this;
     var mask = {};
+    var p;
 
     // window context
     var allowed_globals = {};
@@ -31,14 +51,32 @@
       setTimeout(function() { if (cb) cb(); }, 0);
     }
 
+    mask['importScripts'] = function() {
+      for (var i = 0; i < arguments.length; i++) {
+        importScript(context, arguments[i]);
+      }
+    };
+
     // execute script within scope
     var fn = (new Function( "with(this) { (function(){" + scr + "})(); }"));
     fn.call(mask);
-  } // end scopedEval
+    // end scopedEval
+  }
 
   window.Worker = function(worker_path) {
     var me = this;
     var worker_loaded = false;
+    var data_uri_code = null;
+    var worker_context;
+
+    if (worker_path.match(/^data:/)) {
+      if (worker_path.match(/^data:text\/javascript(;charset=utf-8)?,/)) {
+        data_uri_code = worker_path.substr(worker_path.indexOf(',') + 1);
+        data_uri_code = decodeURI(data_uri_code);
+      } else {
+        throw new Error('Web worker fallback does not support data URIs.');
+      }
+    }
 
     // Allow main thread to specify event listeners
     var ui_listeners = {};
@@ -68,8 +106,12 @@
 
       // onmessage handler
       this.addEventListener('message', function(e) {
-        if (typeof me.onmessage !== 'undefined') {
-          me.onmessage(e);
+        if (typeof worker_context.onmessage !== 'undefined') {
+          try {
+            worker_context.onmessage(e);
+          } catch (error) {
+            triggerEvent(ui_listeners, 'error', error, true);
+          }
         }
       });
 
@@ -81,21 +123,25 @@
         triggerEvent(worker_listeners, 'message', msg);
       }
 
-      this.close = function() {
-        console.log("NYI");
-      }
+      this.close = function() { }
     }
-    var worker_context = new WorkerContext();
+    worker_context = new WorkerContext();
+
+    this.postMessageQueue = [];
 
     this.postMessage = function(msg) {
+      this.postMessageQueue.push(msg);
+
       waitForWorkerLoaded(function() {
-        worker_context.__processPostMessage(msg);
+        var message;
+        while (me.postMessageQueue.length > 0) {
+          message = me.postMessageQueue.shift();
+          worker_context.__processPostMessage(message);
+        }
       });
     }
 
-    this.terminate = function() {
-      console.log("NYI");
-    }
+    this.terminate = function() { }
 
     function waitForWorkerLoaded(callback) {
       (function poll() {
@@ -107,31 +153,34 @@
       })();
     }
 
-    function triggerEvent(listeners_map, event_name, event_data) {
-      var event_obj = {
-        data: event_data
-      }
+    function triggerEvent(listeners_map, event_name, event_data, no_wrapping) {
+      var event_obj = no_wrapping ? event_data : { data: event_data };
+
       if (!listeners_map[event_name]) return;
       for (var i=0; i < listeners_map[event_name].length; i++) {
         listeners_map[event_name][i](event_obj);
       }
     }
 
+    if (data_uri_code) {
+      setTimeout(function() {
+        scopedEval.call(worker_context, data_uri_code);
+        worker_loaded = true;
+      }, 0);
+      return;
+    }
+
     /***** Load and evaluate remote js file ****/
     var req = window.XMLHttpRequest ?
       new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
     if(req === null) {
-      console.log("XMLHttpRequest failed to initiate.");
+      throw new Error("XMLHttpRequest failed to initiate.");
     }
     req.onload = function() {
       scopedEval.call(worker_context, req.responseText);
       worker_loaded = true;
     }
-    try {
-      req.open("GET", worker_path, true);
-      req.send(null);
-    } catch(e) {
-      console.log("Error retrieving worker file", e);
-    }
+    req.open("GET", worker_path, true);
+    req.send(null);
   }
 })(window);
