@@ -23,7 +23,7 @@ Installation
 
 or when using browserify/webpack:
 
-```javascript
+```js
 require('webworker-fallback');
 ```
 
@@ -36,7 +36,7 @@ Limitations
 
 You'll have to change infinite loops in your workers to something like:
 
-```
+```js
 (function loop() {
   // do work
   setTimeout(loop, 60);
@@ -45,7 +45,7 @@ You'll have to change infinite loops in your workers to something like:
 
 Or, experimentally, use the `doEvents` method exposed in the worker context:
 
-```
+```js
 while (true) {
   // do work
   self.doEvents();
