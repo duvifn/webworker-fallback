@@ -7,15 +7,75 @@
     'navigator', 'location', 'clearTimeout', 'clearInterval',
     'applicationCache', 'importScripts', 'Worker', 'console' /*, 'Blob'*/
   ];
+  
+  function isNodeJS(){
+    return (typeof process !== 'undefined') && (process.release.name === 'node');
+  }
 
-  function importScript(worker_context, script_path) {
-    var req = window.XMLHttpRequest ?
+  var fs;
+  var getScriptContentInNode = function(){
+    this.responseText = undefined;
+    this.onerror = undefined;
+    this.onload = undefined;
+    this.status = undefined;
+  };
+  getScriptContentInNode.prototype.open = function(method, worker_path, sync){
+    if (typeof fs == 'undefined'){
+      fs = require('fs');
+    }
+    if (sync){
+      try {
+        var content =  fs.readFileSync(worker_path, {encoding : 'utf8'});
+        this.responseText = content;
+        this.status = 200;
+        if (typeof this.onload !== 'undefined'){
+          this.onload();
+        }
+      } catch (e){
+        this.status = 404;
+        if (typeof this.onerror !== 'undefined'){
+          this.onerror(e);
+        }
+        return;
+      }
+    } else { //not sync
+      var that = this;
+      fs.readFile(worker_path, {encoding : 'utf8'}, function(err, content){
+        if (err){
+          that.status = 404;
+          if (typeof that.onerror !== 'undefined'){
+            that.onerror(err);
+          }
+          return;
+        }
+        that.responseText = content;
+        that.status = 200;
+        if (typeof that.onload !== 'undefined'){
+          that.onload();
+        }
+      });
+        
+    }
+  };
+  getScriptContentInNode.prototype.send = function(){ };
+
+  function getScriptLoader(){
+    var req;
+    if  (isNodeJS()){
+      req = new getScriptContentInNode();
+    } else {
+      req = window.XMLHttpRequest ?
       new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 
-    if (req === null) {
-      throw new Error("XMLHttpRequest failed to initiate.");
+      if (req === null) {
+        throw new Error("XMLHttpRequest failed to initiate.");
+      }
     }
-
+    return req;
+  }
+  function importScript(worker_context, script_path) {
+    
+    var req = getScriptLoader();
     req.open("GET", script_path, false);
     req.send(null);
 
@@ -171,11 +231,7 @@
     }
 
     /***** Load and evaluate remote js file ****/
-    var req = window.XMLHttpRequest ?
-      new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-    if(req === null) {
-      throw new Error("XMLHttpRequest failed to initiate.");
-    }
+    var req = getScriptLoader();
     req.onload = function() {
       scopedEval.call(worker_context, req.responseText);
       worker_loaded = true;
