@@ -19,11 +19,11 @@
     this.onload = undefined;
     this.status = undefined;
   };
-  getScriptContentInNode.prototype.open = function(method, worker_path, sync){
+  getScriptContentInNode.prototype.open = function(method, worker_path, async){
     if (typeof fs == 'undefined'){
       fs = require('fs');
     }
-    if (sync){
+    if (!async){
       try {
         var content =  fs.readFileSync(worker_path, {encoding : 'utf8'});
         this.responseText = content;
@@ -38,7 +38,7 @@
         }
         return;
       }
-    } else { //not sync
+    } else { //async
       var that = this;
       fs.readFile(worker_path, {encoding : 'utf8'}, function(err, content){
         if (err){
